@@ -1,0 +1,3 @@
+CREATE TABLE gtin (
+    gtin BIGINT PRIMARY KEY
+);
