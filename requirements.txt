@@ -1,0 +1,8 @@
+psycopg2-binary
+pymongo
+python-dotenv
+pytest
+selenium
+requests
+webdriver-manager
+bs4

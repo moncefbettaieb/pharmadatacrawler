@@ -1,0 +1,17 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: scrapper1
+spec:
+  schedule: "0 0 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: scrapper1
+            image: gcr.io/your-gcp-project-id/scrapper1:latest
+            env:
+            - name: MONGO_URI
+              value: "mongodb://user:password@mongo:27017/uat_db"
+          restartPolicy: OnFailure

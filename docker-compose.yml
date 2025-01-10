@@ -1,0 +1,15 @@
+version: "3.9"
+
+services:
+  mongo:
+    image: mongo:latest
+    container_name: local-mongo
+    ports:
+      - "27017:27017"  # Expose le port 27017 (par défaut pour MongoDB)
+    environment:
+      MONGO_URI: mongodb://root:example@mongo:27017/your_database
+    volumes:
+      - mongo-data:/data/db  # Volume pour stocker les données MongoDB
+
+volumes:
+  mongo-data:

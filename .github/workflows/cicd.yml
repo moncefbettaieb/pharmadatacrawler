@@ -1,0 +1,124 @@
+name: CI/CD Workflow
+
+on:
+  push:
+    branches:
+      - main   # Déploiement sur UAT
+  pull_request:
+    branches:
+      - main   # Exécuter les tests sur les PRs
+  release:
+    types:
+      - created # Déploiement sur prod pour les tags
+
+jobs:
+  build-and-run-dev:
+    if: github.event_name == 'pull_request' || github.ref_name != 'main'
+    runs-on: ubuntu-latest
+
+    steps:
+      # Étape 1 : Checkout du code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Étape 2 : Configurer Python et les dépendances
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m venv env
+          source env/bin/activate
+          pip install -r requirements.txt
+
+      # Étape 3 : Lancer les tests
+      #- name: Run Tests
+      #  run: |
+      #    source env/bin/activate
+      #    pytest --maxfail=5 --disable-warnings
+
+  deploy-uat:
+    if: github.ref_name == 'main'
+    needs: build-and-run-dev
+    runs-on: ubuntu-latest
+
+    steps:
+      # Étape 1 : Checkout du code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Étape 2 : Authentification à GCP
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      # Étape 3 : Configurer le projet GCP
+      - name: Configure GCP
+        run: gcloud config set project your-gcp-project-id
+
+      # Étape 4 : Injecter le fichier `.env` pour UAT
+      - name: Inject UAT .env
+        run: echo "${{ secrets.ENV_UAT }}" > .env
+
+      # Étape 5 : Construire et pousser l'image Docker
+      - name: Build and Push Docker images
+        run: |
+          docker build -t gcr.io/your-gcp-project-id/scrapper1:latest --build-arg SCRIPT=scrapper1.py .
+          docker push gcr.io/your-gcp-project-id/scrapper1:latest
+
+      # Étape 6 : Déployer sur Kubernetes
+      - name: Deploy to Kubernetes
+        run: |
+          gcloud container clusters get-credentials uat-cluster --zone europe-west1-b
+          kubectl apply -f kubernetes/scrapper1-cronjob.yaml
+
+      # Étape 7 : Déployer le DAG Airflow
+      - name: Deploy Airflow DAG
+        run: |
+          gcloud compute scp dags/scrappers_dag.py airflow-vm:/opt/airflow/dags/
+          gcloud compute ssh airflow-vm -- 'sudo systemctl restart airflow'
+
+  deploy-prod:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: deploy-uat
+    runs-on: ubuntu-latest
+
+    steps:
+      # Étape 1 : Checkout du code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Étape 2 : Authentification à GCP
+      - name: Authenticate to GCP
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      # Étape 3 : Configurer le projet GCP
+      - name: Configure GCP
+        run: gcloud config set project your-gcp-project-id
+
+      # Étape 4 : Injecter le fichier `.env` pour Prod
+      - name: Inject PROD .env
+        run: echo "${{ secrets.ENV_PROD }}" > .env
+
+      # Étape 5 : Construire et pousser l'image Docker
+      - name: Build and Push Docker images
+        run: |
+          docker build -t gcr.io/your-gcp-project-id/scrapper1:prod --build-arg SCRIPT=scrapper1.py .
+          docker push gcr.io/your-gcp-project-id/scrapper1:prod
+
+      # Étape 6 : Déployer sur Kubernetes
+      - name: Deploy to Kubernetes
+        run: |
+          gcloud container clusters get-credentials prod-cluster --zone europe-west1-b
+          kubectl apply -f kubernetes/scrapper1-cronjob.yaml
+
+      # Étape 7 : Déployer le DAG Airflow
+      - name: Deploy Airflow DAG
+        run: |
+          gcloud compute scp dags/scrappers_dag.py airflow-vm:/opt/airflow/dags/
+          gcloud compute ssh airflow-vm -- 'sudo systemctl restart airflow'

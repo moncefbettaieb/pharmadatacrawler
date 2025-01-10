@@ -1,0 +1,3 @@
+CREATE TABLE isbn (
+    isbn BIGINT PRIMARY KEY
+);
