@@ -13,6 +13,7 @@ from scripts.utils.MongoConnection import MongoConnection
 
 def insert_sitemap(collection_name, document):
     db = MongoConnection.get_instance()
+    db[collection_name].drop()
     collection = db[collection_name]
     collection.insert_one(document)
 
