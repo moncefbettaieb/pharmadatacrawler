@@ -69,6 +69,56 @@ jobs:
           docker build -t europe-west9-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job:latest .
           docker push europe-west9-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job:latest
 
+      - name: Deploy Cloud Run Job for scrappers
+        run: |
+          gcloud run jobs delete scrappers-job-scrappers --region=europe-west9 --quiet || true
+          gcloud run jobs create scrappers-job-scrappers \
+              --image=europe-west9-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job:latest \
+              --region=europe-west9 \
+              --args "src.pharma_crawler.main" \
+              --memory=4Gi  \
+              --task-timeout 24h
+
+      - name: Execute Cloud Run Job for scrappers
+        run: |
+          gcloud run jobs execute scrappers-job-scrappers --region=europe-west9
+
+  deploy-prod:
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Authenticate with GCP
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up GCloud CLI
+        uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+      
+      - name: Inject PROD .env
+        run: echo "${{ secrets.ENV_PROD }}" > .env
+
+      - name: Source .env and export variables
+        run: |
+          set -a
+          source .env
+          set +a
+      
+      - name: Authenticate Docker with GCP Artifact Registry
+        run: |
+          gcloud auth configure-docker europe-west9-docker.pkg.dev
+
+      - name: Build and Push Docker images
+        run: |
+          docker build -t europe-west9-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job:latest .
+          docker push europe-west9-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job:latest
+
       - name: Deploy Cloud Run Job for scrapper1
         run: |
           gcloud run jobs delete scrappers-job-scrapper1 --region=europe-west9 --quiet || true

@@ -1,5 +1,8 @@
 {
     "pharma-gdd": [
         "https://www.pharma-gdd.com/sitemap-product.xml"
+    ],
+    "pharmacie-du-centre": [
+        "https://www.pharmacie-du-centre-albert.fr/sitemap/product"
     ]
 }
