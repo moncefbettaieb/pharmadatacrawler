@@ -1,5 +1,5 @@
 from pymongo import MongoClient
-from config.settings import MONGO_CONFIG
+from utils.config.settings import MONGO_CONFIG
 
 class MongoConnection:
     _instance = None

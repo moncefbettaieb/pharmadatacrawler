@@ -2,12 +2,10 @@ import sys
 import re
 import logging
 import logging.config
-from config import settings
 from datetime import datetime
 from selenium.webdriver.common.by import By
-from scripts.utils.MongoConnection import MongoConnection
-from scripts.scrappers.save_sitemaps_links_to_mongo import configure_selenium
-
+from modules.scripts.utils.MongoConnection import MongoConnection
+from modules.scripts.scrappers.pharmacie_du_centre_scrapper import scrape_pharma_du_centre
 
 def insert_scraped_data(source, data, db, last_execution=None):
     """
@@ -19,7 +17,7 @@ def insert_scraped_data(source, data, db, last_execution=None):
         item["last_update"] = datetime.now() if last_execution is not None else None
         collection.insert_one(item)
 
-def process_sitemap_entries(db, last_execution=None,):
+def process_sitemap_entries(driver, db, last_execution=None,):
     """
     Traiter les entrées de la collection `sitemaps` en fonction de last_execution.
     """
@@ -42,9 +40,12 @@ def process_sitemap_entries(db, last_execution=None,):
 
         try:
             print(f"Processing {loc}")
-            scraped_data = scrape_pharma_gdd(loc)
+            match source:
+                case "pharma-gdd":
+                    scraped_data = scrape_pharma_gdd(driver, loc)
+                case "pharmacie-du-centre":
+                    scraped_data = scrape_pharma_du_centre(driver, loc)
             for item in scraped_data:
-
                 item["source"] = source
                 insert_scraped_data(source, scraped_data, db, last_execution)
 
@@ -53,7 +54,7 @@ def process_sitemap_entries(db, last_execution=None,):
         except Exception as e:
             print(f"Error processing {loc}: {e}")
 
-def scrape_pharma_gdd(url):
+def scrape_pharma_gdd(driver, url):
     """
     Scrape les informations d'un produit sur le site Pharma GDD.
 
@@ -76,6 +77,11 @@ def scrape_pharma_gdd(url):
         title = driver.find_element(By.CLASS_NAME, 'title').text
         if title is None or title == "Pharma GDD":
             return 
+        try:
+            reference = driver.find_element(By.CLASS_NAME, 'product-reference').text
+            cip_code = "".join([char for char in reference if char.isdigit()])
+        except:
+            cip_code = ""
         try:
             brand = driver.find_element(By.CSS_SELECTOR, 'a.brand').text
         except:
@@ -129,11 +135,10 @@ def scrape_pharma_gdd(url):
         except:
             print(f"le texts n'est pas existant")
 
-        texts = driver.find_elements(By.CLASS_NAME, 'text')
-
         # Créer le dictionnaire du produit
         product_data = [{
             "title": title,
+            "cip_code": cip_code,
             "brand": brand,
             "short_desc": short_desc,
             "long_desc": long_desc,
@@ -150,25 +155,22 @@ def scrape_pharma_gdd(url):
         return product_data
 
     except Exception as e:
-        logging.error(f"Erreur lors du scraping de {url} : {e}")
+        logging.error(f"Erreur lors du scraping Pharma GDD de {url} : {e}")
         return None
 
-def main():
-    logging.config.fileConfig('config/logging.conf')
+def main(driver):
     logger = logging.getLogger('scrapper')
-    logger.info(f"Environnement : {settings.APP_ENV}")
+    logger.info(f"Pharma Scrapper")
     db = MongoConnection.get_instance()
     last_execution_arg = sys.argv[1] if len(sys.argv) > 1 else None
     last_execution = (
         datetime.strptime(last_execution_arg, "%Y-%m-%d") if last_execution_arg else None
     )    
     try:
-        process_sitemap_entries(db, last_execution)
+        process_sitemap_entries(driver, db, last_execution)
     except Exception as e:
         logger.error(f"Erreur lors du traitement des entrées de sitemap : {e}")
     finally:
         driver.quit()
-    logger.info("Application terminée.")
-if __name__ == "__main__":
-    driver = configure_selenium()
-    main()
+def runRunPharmaDataScrapping(driver):
+    main(driver)

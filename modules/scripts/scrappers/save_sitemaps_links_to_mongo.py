@@ -8,12 +8,10 @@ from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 from xml.etree import ElementTree as ET
-from config.settings import MONGO_CONFIG
-from scripts.utils.MongoConnection import MongoConnection
+from utils.config.settings import MONGO_CONFIG
+from modules.scripts.utils.MongoConnection import MongoConnection
 
 def insert_sitemap(collection_name, document):
-    db = MongoConnection.get_instance()
-    db[collection_name].drop()
     collection = db[collection_name]
     collection.insert_one(document)
 
@@ -30,16 +28,15 @@ def configure_selenium():
     return driver
 
 # Fonction pour récupérer le contenu du fichier XML
-def fetch_sitemap_with_selenium(url):
-    driver = configure_selenium()
+def fetch_sitemap_with_selenium(driver, url):
     try:
         print(f"Accessing {url}")
         driver.get(url)
         # Extraire le contenu de la page
         page_source = driver.page_source
         return page_source
-    finally:
-        driver.quit()
+    except Exception as e:
+                print(f"Error processing {url}: {e}")
 
 # Parser le fichier XML
 def parse_sitemap(xml_content):
@@ -87,13 +84,14 @@ def load_sitemap_links(file_path):
     with open(file_path, "r") as file:
         return json.load(file)
 # Enregistrer dans MongoDB
-def save_sitemaps_to_mongo_with_selenium(file_path, collection_name):
+def save_sitemaps_to_mongo_with_selenium(driver, file_path, collection_name, INSERTED_DAY):
+    db[collection_name].drop()
     sitemap_data = load_sitemap_links(file_path)
     for source, links in sitemap_data.items():
         for link in links:
             try:
                 print(f"Processing sitemap from source '{source}': {link}")
-                html_xml_content = fetch_sitemap_with_selenium(link)
+                html_xml_content = fetch_sitemap_with_selenium(driver, link)
                 xml_content = extract_xml(html_xml_content)
                 parsed_data = parse_sitemap(xml_content)
                 for entry in parsed_data:
@@ -116,8 +114,12 @@ def extract_xml(content):
     else:
         raise ValueError("Aucun contenu XML valide trouvé.")
     
-if __name__ == "__main__":
-    FILE_PATH = "resources/sitemap_links.json"  # Chemin du fichier contenant les liens
+def runSitemapLinks(driver):
+    FILE_PATH = "resources/sitemap_links.json"
     COLLECTION_NAME = "sitemaps"
-    INSERTED_DAY = datetime.now().strftime("%d%m%Y") 
-    save_sitemaps_to_mongo_with_selenium(FILE_PATH, COLLECTION_NAME)
+    INSERTED_DAY = datetime.now().strftime("%d%m%Y")
+    db[COLLECTION_NAME].drop()
+    save_sitemaps_to_mongo_with_selenium(driver, FILE_PATH, COLLECTION_NAME, INSERTED_DAY)
+
+
+db = MongoConnection.get_instance()
