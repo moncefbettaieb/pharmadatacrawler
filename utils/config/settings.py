@@ -8,7 +8,7 @@ load_dotenv()
 
 
 #l'URL de connexion PostgreSQL
-DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = os.getenv("DATABASE_URL", 'localhost')
 
 # Configuration PostgreSQL
 POSTGRES_CONFIG = {
@@ -68,3 +68,14 @@ LOGGING_LEVEL = os.getenv("LOGGING_LEVEL", "DEBUG")
 # Test de configuration au démarrage
 if APP_ENV not in ["dev", "uat", "prod"]:
     raise ValueError(f"Environnement inconnu : {APP_ENV}")
+
+
+def load_config():
+    """
+    Charge la configuration depuis un fichier, des variables d'environnements, etc.
+    """
+    config = {}
+    config['DATABASE_URL'] = os.getenv("DATABASE_URL", 'localhost')
+    config['APP_ENV'] = os.getenv("APP_ENV", "dev")
+
+    return config
