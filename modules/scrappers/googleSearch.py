@@ -1,7 +1,7 @@
 import time
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
-from scripts.utils import db_utils
+from utils.db import db_utils
 
 
 service = Service('/Users/mbettaieb/Downloads/chromedriver-mac-arm64/chromedriver')
