@@ -39,4 +39,4 @@ ENV PYTHONPATH="/app"
 
 # Commande par défaut
 ENTRYPOINT ["python", "-m"]
-CMD ["scripts.scrappers.save_sitemaps_links_to_mongo"]
+CMD ["scrappers.save_sitemaps_links_to_mongo"]

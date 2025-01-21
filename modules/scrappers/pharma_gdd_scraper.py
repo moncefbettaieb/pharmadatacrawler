@@ -4,8 +4,8 @@ import logging
 import logging.config
 from datetime import datetime
 from selenium.webdriver.common.by import By
-from modules.scripts.utils.MongoConnection import MongoConnection
-from modules.scripts.scrappers.pharmacie_du_centre_scrapper import scrape_pharma_du_centre
+from utils.db.MongoConnection import MongoConnection
+from modules.scrappers.pharmacie_du_centre_scrapper import scrape_pharma_du_centre
 
 def insert_scraped_data(source, data, db, last_execution=None):
     """

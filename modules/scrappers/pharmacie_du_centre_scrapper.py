@@ -1,7 +1,7 @@
 import logging
 import logging.config
 from selenium.webdriver.common.by import By
-from modules.scripts.scrappers.save_sitemaps_links_to_mongo import configure_selenium
+from modules.scrappers.save_sitemaps_links_to_mongo import configure_selenium
 
 
 def scrape_pharma_du_centre(driver, url):

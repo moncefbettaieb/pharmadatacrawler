@@ -1,14 +1,14 @@
 import psycopg2
 from psycopg2.extras import DictCursor
-from config.settings import POSTGRES_CONFIG
+from utils.config.settings import POSTGRES_CONFIG
 
-def get_postgres_connection():
+def get_postgres_connection(dbname):
     return psycopg2.connect(
         host=POSTGRES_CONFIG["host"],
         port=POSTGRES_CONFIG["port"],
         user=POSTGRES_CONFIG["user"],
         password=POSTGRES_CONFIG["password"],
-        dbname=POSTGRES_CONFIG["dbname"]
+        dbname=POSTGRES_CONFIG[f"{dbname}"]
     )
 
 def execute_query(query, params=None):

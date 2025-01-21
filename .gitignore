@@ -5,10 +5,10 @@ logs/app.log
 src/pharma_crawler/__pycache__/*
 tests/__pycache__/*
 .pytest_cache/*
-modules/scripts/scrappers/__pycache__/*
-modules/scripts/utils/__pycache__/*
 modules/scrappers/__pycache__/*
-modules/scripts/__pycache__/*
+modules/utils/__pycache__/*
+modules/scrappers/__pycache__/*
+modules/__pycache__/*
 __pycache__/main.*
 utils/config/__pycache__/*
 utils/__pycache__/*

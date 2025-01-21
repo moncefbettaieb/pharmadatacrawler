@@ -17,6 +17,7 @@ POSTGRES_CONFIG = {
     "user": os.getenv("POSTGRES_USER", "your_user"),
     "password": os.getenv("POSTGRES_PASSWORD", "your_password"),
     "dbname": os.getenv("POSTGRES_DB", "your_database"),
+    "dbdwhname": os.getenv("POSTGRES_DWH_DB", "your_database"),
 }
 
 # Configuration MongoDB
@@ -64,6 +65,8 @@ SCHEDULER_CONFIG = {
 
 # Autres configurations
 LOGGING_LEVEL = os.getenv("LOGGING_LEVEL", "DEBUG")
+
+NB_DOWNLOAD_IMAGES = os.getenv("NB_DOWNLOAD_IMAGES")
 
 # Test de configuration au démarrage
 if APP_ENV not in ["dev", "uat", "prod"]:
