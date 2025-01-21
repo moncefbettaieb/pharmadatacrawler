@@ -64,9 +64,9 @@ jobs:
         env:
           GCP_SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SA_KEY }}
         run: |
-          echo "$GCP_SERVICE_ACCOUNT_KEY" > utils/configfournisseur-data.json
-          export GOOGLE_APPLICATION_CREDENTIALS=utils/configfournisseur-data.json
-          echo "GOOGLE_APPLICATION_CREDENTIALS is set to utils/configfournisseur-data.json
+          echo "$GCP_SERVICE_ACCOUNT_KEY" > utils/config/fournisseur-data.json
+          export GOOGLE_APPLICATION_CREDENTIALS=utils/config/fournisseur-data.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS is set to utils/config/fournisseur-data.json
 
       - name: Authenticate Docker with GCP Artifact Registry
         run: |
@@ -126,9 +126,9 @@ jobs:
         env:
           GCP_SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SA_KEY }}
         run: |
-          echo "$GCP_SERVICE_ACCOUNT_KEY" > utils/configfournisseur-data.json
-          export GOOGLE_APPLICATION_CREDENTIALS=utils/configfournisseur-data.json
-          echo "GOOGLE_APPLICATION_CREDENTIALS is set to utils/configfournisseur-data.json
+          echo "$GCP_SERVICE_ACCOUNT_KEY" > utils/config/fournisseur-data.json
+          export GOOGLE_APPLICATION_CREDENTIALS=utils/config/fournisseur-data.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS is set to utils/config/fournisseur-data.json
 
       - name: Authenticate Docker with GCP Artifact Registry
         run: |
@@ -155,4 +155,4 @@ jobs:
           gcloud run jobs execute scrappers-job-scrappers --region=europe-west9
 
       - name: Cleanup temporary files
-        run: rm -f utils/configfournisseur-data.json
+        run: rm -f utils/config/fournisseur-data.json
