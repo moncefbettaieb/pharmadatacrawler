@@ -1,5 +1,5 @@
 from pymongo import MongoClient
-from config.settings import MONGO_CONFIG
+from utils.config.settings import MONGO_CONFIG
 
 def get_mongo_connection():
     client = MongoClient(

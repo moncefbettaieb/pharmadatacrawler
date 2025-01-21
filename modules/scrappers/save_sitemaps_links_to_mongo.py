@@ -9,7 +9,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 from xml.etree import ElementTree as ET
 from utils.config.settings import MONGO_CONFIG
-from modules.scripts.utils.MongoConnection import MongoConnection
+from utils.db.MongoConnection import MongoConnection
 
 def insert_sitemap(collection_name, document):
     collection = db[collection_name]

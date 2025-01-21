@@ -2,9 +2,9 @@ import sys
 import logging
 import logging.config
 from utils.config import settings
-from modules.scripts.scrappers.save_sitemaps_links_to_mongo import runSitemapLinks
-from modules.scripts.scrappers.save_sitemaps_links_to_mongo import configure_selenium
-from modules.scripts.scrappers.pharma_gdd_scraper import runRunPharmaDataScrapping
+from modules.scrappers.save_sitemaps_links_to_mongo import runSitemapLinks
+from modules.scrappers.save_sitemaps_links_to_mongo import configure_selenium
+from modules.scrappers.pharma_gdd_scraper import runRunPharmaDataScrapping
 
 def main():
     logging.config.fileConfig('utils/config/logging.conf')
@@ -12,7 +12,7 @@ def main():
     logger.info("Application Started.")
     logger.info(f"Environnement : {settings.APP_ENV}")
     driver = configure_selenium()
-    #runSitemapLinks(driver)
+    runSitemapLinks(driver)
     runRunPharmaDataScrapping(driver)
     logger.info("Application terminée.")
 
