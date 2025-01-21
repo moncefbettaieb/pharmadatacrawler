@@ -59,7 +59,15 @@ jobs:
           set -a
           source .env
           set +a
-      
+
+      - name: Set up Google Cloud authentication
+        env:
+          GCP_SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SA_KEY }}
+        run: |
+          echo "$GCP_SERVICE_ACCOUNT_KEY" > $HOME/gcp-key.json
+          export GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcp-key.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS is set to $HOME/gcp-key.json"
+
       - name: Authenticate Docker with GCP Artifact Registry
         run: |
           gcloud auth configure-docker europe-west9-docker.pkg.dev
@@ -83,6 +91,9 @@ jobs:
       - name: Execute Cloud Run Job for scrappers
         run: |
           gcloud run jobs execute scrappers-job-scrappers --region=europe-west9
+
+      - name: Cleanup temporary files
+        run: rm -f $HOME/gcp-key.json
 
   deploy-prod:
     if: startsWith(github.ref, 'refs/tags/')
@@ -111,6 +122,14 @@ jobs:
           source .env
           set +a
       
+      - name: Set up Google Cloud authentication
+        env:
+          GCP_SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SA_KEY }}
+        run: |
+          echo "$GCP_SERVICE_ACCOUNT_KEY" > $HOME/gcp-key.json
+          export GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcp-key.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS is set to $HOME/gcp-key.json"
+
       - name: Authenticate Docker with GCP Artifact Registry
         run: |
           gcloud auth configure-docker europe-west9-docker.pkg.dev
@@ -134,3 +153,6 @@ jobs:
       - name: Execute Cloud Run Job for scrappers
         run: |
           gcloud run jobs execute scrappers-job-scrappers --region=europe-west9
+
+      - name: Cleanup temporary files
+        run: rm -f $HOME/gcp-key.json
