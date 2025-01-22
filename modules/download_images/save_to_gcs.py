@@ -4,12 +4,12 @@ import time
 import os
 import logging
 import logging.config
+from utils.config import settings
 from psycopg2 import sql
 from google.cloud import storage
 from selenium.webdriver.common.by import By
 from typing import Optional
 from utils.db.postgres_utils import get_postgres_connection
-from modules.scrappers.save_sitemaps_links_to_mongo import configure_selenium
 from utils.config.settings import NB_DOWNLOAD_IMAGES
 
 
@@ -106,7 +106,7 @@ def download_and_upload_images_to_gcs(
 if __name__ == "__main__":
     TABLE_NAME = "dim_images"
     GCS_BUCKET_NAME = "pharma_images"
-    driver = configure_selenium()
+    driver = settings.configure_selenium()
     logging.config.fileConfig('utils/config/logging.conf')
     logger = logging.getLogger('download_images.save_to_gcs')
 

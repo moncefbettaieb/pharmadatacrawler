@@ -1,33 +1,15 @@
 import re
 import json
 from datetime import datetime
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 from xml.etree import ElementTree as ET
-from utils.config.settings import MONGO_CONFIG
+from utils.config import settings
 from utils.db.MongoConnection import MongoConnection
 
 def insert_sitemap(collection_name, document):
     collection = db[collection_name]
     collection.insert_one(document)
 
-# Configuration de Selenium
-def configure_selenium():
-    chrome_options = Options()
-    chrome_options.add_argument("--headless")  # Exécuter en mode sans tête
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--log-level=3")
-    service = Service(ChromeDriverManager().install(), log_path="chromedriver.log")
-    driver = webdriver.Chrome(service=service, options=chrome_options)
-    return driver
-
-# Fonction pour récupérer le contenu du fichier XML
 def fetch_sitemap_with_selenium(driver, url):
     try:
         print(f"Accessing {url}")
@@ -38,7 +20,6 @@ def fetch_sitemap_with_selenium(driver, url):
     except Exception as e:
                 print(f"Error processing {url}: {e}")
 
-# Parser le fichier XML
 def parse_sitemap(xml_content):
     """
     Parser le contenu XML d'un sitemap et extraire les balises <loc>, <lastmod>, et <priority>.
@@ -83,8 +64,8 @@ def load_sitemap_links(file_path):
     """
     with open(file_path, "r") as file:
         return json.load(file)
-# Enregistrer dans MongoDB
-def save_sitemaps_to_mongo_with_selenium(driver, file_path, collection_name, INSERTED_DAY):
+
+def save_sitemaps_to_mongo_with_selenium(driver, db, file_path, collection_name, INSERTED_DAY):
     db[collection_name].drop()
     sitemap_data = load_sitemap_links(file_path)
     for source, links in sitemap_data.items():
@@ -113,13 +94,12 @@ def extract_xml(content):
         return match.group(0)  # Retourne uniquement le contenu XML
     else:
         raise ValueError("Aucun contenu XML valide trouvé.")
-    
-def runSitemapLinks(driver):
+
+if __name__ == "__main__":
     FILE_PATH = "resources/sitemap_links.json"
     COLLECTION_NAME = "sitemaps"
     INSERTED_DAY = datetime.now().strftime("%d%m%Y")
+    db = MongoConnection.get_instance()
     db[COLLECTION_NAME].drop()
+    driver = settings.configure_selenium()
     save_sitemaps_to_mongo_with_selenium(driver, FILE_PATH, COLLECTION_NAME, INSERTED_DAY)
-
-
-db = MongoConnection.get_instance()
