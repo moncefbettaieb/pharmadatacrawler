@@ -64,9 +64,11 @@ jobs:
         env:
           GCP_SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SA_KEY }}
         run: |
-          echo "$GCP_SERVICE_ACCOUNT_KEY" > utils/config/fournisseur-data.json
+          cat <<EOF > utils/config/fournisseur-data.json
+          $GCP_SERVICE_ACCOUNT_KEY
+          EOF
           export GOOGLE_APPLICATION_CREDENTIALS=utils/config/fournisseur-data.json
-          echo "GOOGLE_APPLICATION_CREDENTIALS is set to utils/config/fournisseur-data.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS is set to utils/config/fournisseur-data.json"
 
       - name: Authenticate Docker with GCP Artifact Registry
         run: |
