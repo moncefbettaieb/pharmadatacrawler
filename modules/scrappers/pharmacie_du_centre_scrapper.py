@@ -1,7 +1,6 @@
 import logging
 import logging.config
 from selenium.webdriver.common.by import By
-from modules.scrappers.save_sitemaps_links_to_mongo import configure_selenium
 
 
 def scrape_pharma_du_centre(driver, url):
@@ -103,11 +102,3 @@ def scrape_pharma_du_centre(driver, url):
     except Exception as e:
         logging.error(f"Erreur lors du scraping pharmacie centre de {url} : {e}")
         return None
-
-""" def main():
-    url = "https://www.pharmacie-du-centre-albert.fr/produit/24-sachets-infusion-perte-de-poids-3760007337185"
-    driver = configure_selenium()
-    scrape_pharma_du_centre(driver, url)
-
-if __name__ == "__main__":
-    main() """
