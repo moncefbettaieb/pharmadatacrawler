@@ -6,7 +6,7 @@ from xml.etree import ElementTree as ET
 from utils.config import settings
 from utils.db.MongoConnection import MongoConnection
 
-def insert_sitemap(collection_name, document):
+def insert_sitemap(db, collection_name, document):
     collection = db[collection_name]
     collection.insert_one(document)
 
@@ -66,7 +66,6 @@ def load_sitemap_links(file_path):
         return json.load(file)
 
 def save_sitemaps_to_mongo_with_selenium(driver, db, file_path, collection_name, INSERTED_DAY):
-    db[collection_name].drop()
     sitemap_data = load_sitemap_links(file_path)
     for source, links in sitemap_data.items():
         for link in links:
@@ -79,7 +78,7 @@ def save_sitemaps_to_mongo_with_selenium(driver, db, file_path, collection_name,
                     entry["source"] = source
                     entry["source_sitemap"] = link 
                     entry["inserted_day"] = INSERTED_DAY
-                    insert_sitemap(collection_name, entry)
+                    insert_sitemap(db, collection_name, entry)
                 print(f"Inserted {len(parsed_data)} entries from {link}")
             except Exception as e:
                 print(f"Error processing {link}: {e}")
@@ -102,4 +101,4 @@ if __name__ == "__main__":
     db = MongoConnection.get_instance()
     db[COLLECTION_NAME].drop()
     driver = settings.configure_selenium()
-    save_sitemaps_to_mongo_with_selenium(driver, FILE_PATH, COLLECTION_NAME, INSERTED_DAY)
+    save_sitemaps_to_mongo_with_selenium(driver, db, FILE_PATH, COLLECTION_NAME, INSERTED_DAY)

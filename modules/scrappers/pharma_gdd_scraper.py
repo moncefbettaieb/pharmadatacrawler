@@ -1,12 +1,8 @@
-import sys
 import re
 import logging
 import logging.config
-from datetime import datetime
 from utils.config import settings
 from selenium.webdriver.common.by import By
-from utils.db.MongoConnection import MongoConnection
-from modules.scrappers.pharma_scrapper import process_sitemap_entries
 
 def scrape_pharma_gdd(driver, url):
     """
@@ -112,3 +108,5 @@ def scrape_pharma_gdd(driver, url):
         logging.error(f"Erreur lors du scraping Pharma GDD de {url} : {e}")
         return None
     
+if __name__ == "__main__":
+    driver = settings.configure_selenium()
