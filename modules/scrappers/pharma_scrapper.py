@@ -37,7 +37,8 @@ def process_sitemap_entries(driver, db, last_execution=None):
                 case "pharmacie-du-centre":
                     scraped_data = pharmacie_du_centre_scrapper.scrape_pharma_du_centre(driver, loc)
             for item in scraped_data:
-                item["source"] = source
+                if item is not None: 
+                    item["source"] = source
                 insert_scraped_data(source, scraped_data, db, last_execution)
 
             print(f"Inserted {len(scraped_data)} items from {loc} into {source}")
@@ -51,7 +52,8 @@ def insert_scraped_data(source, data, db, last_execution=None):
     """
     collection = db[source]
     for item in data:
-        item["processed_time"] = datetime.now()
+        if item is not None:
+            item["processed_time"] = datetime.now()
         collection.insert_one(item)
 
 if __name__ == "__main__":
