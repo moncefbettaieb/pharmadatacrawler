@@ -4,7 +4,7 @@ from datetime import datetime
 from utils.config import settings
 from utils.db.MongoConnection import MongoConnection
 from modules.scrappers.save_sitemaps_links_to_mongo import save_sitemaps_to_mongo_with_selenium
-from modules.scrappers import pharma_gdd_scraper
+from modules.scrappers import pharma_scrapper
 from modules.download_images import save_to_gcs
 
 if __name__ == "__main__":
@@ -18,6 +18,6 @@ if __name__ == "__main__":
     INSERTED_DAY = datetime.now().strftime("%d%m%Y")
     db = MongoConnection.get_instance()
     save_sitemaps_to_mongo_with_selenium(driver, db, FILE_PATH, COLLECTION_NAME, INSERTED_DAY)
-    pharma_gdd_scraper(driver)
-    save_to_gcs(driver)
+    #pharma_scrapper(driver)
+    #save_to_gcs(driver)
     logger.info("Application terminée.")
