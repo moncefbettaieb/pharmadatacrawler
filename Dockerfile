@@ -2,11 +2,10 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Installer les dépendances système
-RUN apt-get update && apt-get install -y \
-    wget \
-    gnupg \
-    unzip \
+# Installer Chromium + Driver + dépendances
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    chromium \
+    chromium-driver \
     libnss3 \
     libxss1 \
     libappindicator3-1 \
@@ -20,23 +19,20 @@ RUN apt-get update && apt-get install -y \
     libgbm1 \
     libu2f-udev \
     libxtst6 \
-    && apt-get clean
+    ca-certificates \
+    wget \
+    gnupg \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
 
-# Installer Chrome
-RUN apt -f install -y
-RUN apt-get install -y wget
-RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-RUN apt-get install ./google-chrome-stable_current_amd64.deb -y
-
-# Copier les fichiers nécessaires
+# Copier votre code
 COPY . .
 
-# Installer les dépendances Python
+# Installer les dépendances Python (Selenium, etc.)
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Ajouter le dossier racine au PYTHONPATH
+# Utiliser le binaire Chromium et le chromedriver installés
 ENV PYTHONPATH="/app"
 
-# Commande par défaut
 ENTRYPOINT ["python", "-m"]
 CMD ["scrappers.save_sitemaps_links_to_mongo"]

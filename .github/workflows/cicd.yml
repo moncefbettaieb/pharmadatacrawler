@@ -79,20 +79,38 @@ jobs:
           docker build -t europe-west9-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job:latest .
           docker push europe-west9-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job:latest
 
-      - name: Deploy Cloud Run Job for scrappers
+      - name: Deploy Cloud Run Job for save_sitemaps_links_to_mongo
         run: |
-          gcloud run jobs delete scrappers-job-scrappers --region=europe-west9 --quiet || true
-          gcloud run jobs create scrappers-job-scrappers \
+          gcloud run jobs delete save-sitemaps-links-to-mongo-job --region=europe-west9 --quiet || true
+          gcloud run jobs create save-sitemaps-links-to-mongo-job \
+              --image=europe-west9-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job:latest \
+              --region=europe-west9 \
+              --args "modules.scrappers.save_sitemaps_links_to_mongo" \
+              --memory=4Gi  \
+              --task-timeout 24h \
+              --max-retries=5
+
+      - name: Deploy Cloud Run Job for pharma-scrapper
+        run: |
+          gcloud run jobs delete pharma-scrapper-job --region=europe-west9 --quiet || true
+          gcloud run jobs create pharma-scrapper-job \
+              --image=europe-west9-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job:latest \
+              --region=europe-west9 \
+              --args "modules.scrappers.pharma_scrapper" \
+              --memory=4Gi  \
+              --task-timeout 24h \
+              --max-retries=5
+
+      - name: Deploy Cloud Run Job for download-images
+        run: |
+          gcloud run jobs delete download-images-job --region=europe-west9 --quiet || true
+          gcloud run jobs create download-images-job \
               --image=europe-west9-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job:latest \
               --region=europe-west9 \
               --args "modules.download_images.save_to_gcs" \
               --memory=4Gi  \
               --task-timeout 24h \
-              --max-retries=10
-
-      - name: Execute Cloud Run Job for scrappers
-        run: |
-          gcloud run jobs execute scrappers-job-scrappers --region=europe-west9
+              --max-retries=5
 
       - name: Cleanup temporary files
         run: rm -f utils/configfournisseur-data.json
@@ -138,23 +156,23 @@ jobs:
 
       - name: Build and Push Docker images
         run: |
-          docker build -t europe-west9-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job:latest .
-          docker push europe-west9-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job:latest
+          docker build -t europe-west9-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job-prod:latest .
+          docker push europe-west9-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job-prod:latest
 
       - name: Deploy Cloud Run Job for scrappers
         run: |
-          gcloud run jobs delete scrappers-job-scrappers --region=europe-west9 --quiet || true
-          gcloud run jobs create scrappers-job-scrappers \
-              --image=europe-west9-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job:latest \
+          gcloud run jobs delete crawlers-job-prod --region=europe-west9 --quiet || true
+          gcloud run jobs create crawlers-job-prod \
+              --image=europe-west9-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job-prod:latest \
               --region=europe-west9 \
               --args "src.pharma_crawler.main" \
               --memory=4Gi  \
               --task-timeout 24h \
-              --max-retries=10
+              --max-retries=5
 
       - name: Execute Cloud Run Job for scrappers
         run: |
-          gcloud run jobs execute scrappers-job-scrappers --region=europe-west9
+          gcloud run jobs execute crawlers-job-prod --region=europe-west9
 
       - name: Cleanup temporary files
         run: rm -f utils/config/fournisseur-data.json
