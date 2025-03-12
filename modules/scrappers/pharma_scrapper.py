@@ -13,7 +13,10 @@ def process_sitemap_entries(driver, db, last_execution=None):
     Traiter les entrées de la collection `sitemaps` en fonction de last_execution.
     """
     sitemaps_collection = db["sitemaps"]
-
+    if driver is None:
+        driver = settings.configure_selenium()
+    if db is None:
+        db = MongoConnection.get_instance()
     for sitemap_entry in sitemaps_collection.find():
         loc = sitemap_entry.get("loc")
         lastmod = sitemap_entry.get("lastmod")
@@ -59,18 +62,19 @@ def insert_scraped_data(source, data, db, last_execution=None):
 if __name__ == "__main__":
     logging.config.fileConfig('utils/config/logging.conf')
     logger = logging.getLogger('Pharma Data')
+    logger.info(f"Application Started Environnement : {settings.APP_ENV}.")
     db = MongoConnection.get_instance()
-    logger.info("Application Started.")
-    logger.info(f"Environnement : {settings.APP_ENV}")
     driver = settings.configure_selenium()
     last_execution_arg = sys.argv[1] if len(sys.argv) > 1 else None
     last_execution = (
         datetime.strptime(last_execution_arg, "%Y-%m-%d") if last_execution_arg else None
-    )    
+    )
+    logger.info(f"Last execution was at : {last_execution}.")
     try:
         process_sitemap_entries(driver, db, last_execution)
     except Exception as e:
         logger.error(f"Erreur lors du traitement des entrées de sitemap : {e}")
     finally:
+        logger.error(f"quit driver")
         driver.quit()
     logger.info("Application terminée.")
