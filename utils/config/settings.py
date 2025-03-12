@@ -26,7 +26,7 @@ POSTGRES_CONFIG = {
 
 # Configuration MongoDB
 MONGO_CONFIG = {
-    "host": os.getenv("MONGO_HOST", "localhost"),
+    "host": os.getenv("MONGO_HOST", "host.docker.internal"),
     "port": int(os.getenv("MONGO_PORT", 27017)),
     "username": os.getenv("MONGO_USER", ""),
     "password": os.getenv("MONGO_PASSWORD", ""),

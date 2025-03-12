@@ -13,3 +13,5 @@ __pycache__/main.*
 utils/config/__pycache__/*
 utils/__pycache__/*
 logs/app.log
+modules/download_images/__pycache__/*
+Dockerfile.bak
