@@ -2,41 +2,40 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Installer les dépendances système
-RUN apt-get update && apt-get install -y \
-    wget \
-    gnupg \
-    unzip \
-    libnss3 \
-    libxss1 \
-    libappindicator3-1 \
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-liberation \
+    gnupg \
+    libappindicator3-1 \
     libasound2 \
     libatk-bridge2.0-0 \
+    libgbm1 \
     libgtk-3-0 \
+    libnss3 \
+    libu2f-udev \
     libx11-xcb1 \
     libxcomposite1 \
     libxdamage1 \
-    libgbm1 \
-    libu2f-udev \
+    libxss1 \
     libxtst6 \
-    && apt-get clean
+    unzip \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
 
-# Installer Chrome
-RUN apt -f install -y
-RUN apt-get install -y wget
-RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-RUN apt-get install ./google-chrome-stable_current_amd64.deb -y
+# Install Chrome
+RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && \
+    apt-get install -y ./google-chrome-stable_current_amd64.deb && \
+    rm google-chrome-stable_current_amd64.deb
 
-# Copier les fichiers nécessaires
+# Copy necessary files
 COPY . .
 
-# Installer les dépendances Python
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Ajouter le dossier racine au PYTHONPATH
+# Add the root folder to PYTHONPATH
 ENV PYTHONPATH="/app"
 
-# Commande par défaut
+# Default command
 ENTRYPOINT ["python", "-m"]
 CMD ["scrappers.save_sitemaps_links_to_mongo"]
