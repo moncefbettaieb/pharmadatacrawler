@@ -21,7 +21,7 @@ def scrape_pharma_gdd(driver, url):
         logging.info(f"Chargement de l'URL : {url}")
         
         # Attendre que la page se charge
-        driver.implicitly_wait(3)
+        driver.implicitly_wait(2)
 
         # Extraire le titre
         title = driver.find_element(By.CLASS_NAME, 'title').text

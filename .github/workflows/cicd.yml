@@ -79,10 +79,10 @@ jobs:
           docker build -t europe-west9-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job:latest .
           docker push europe-west9-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job:latest
 
-      - name: Deploy Cloud Run Job for scrappers
+      - name: Deploy Cloud Run Job for save_sitemaps_links_to_mongo
         run: |
-          gcloud run jobs delete crawlers-job --region=europe-west9 --quiet || true
-          gcloud run jobs create crawlers-job \
+          gcloud run jobs delete save_sitemaps_links_to_mongo-job --region=europe-west9 --quiet || true
+          gcloud run jobs create save_sitemaps_links_to_mongo-job \
               --image=europe-west9-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job:latest \
               --region=europe-west9 \
               --args "modules.scrappers.save_sitemaps_links_to_mongo" \
@@ -90,9 +90,27 @@ jobs:
               --task-timeout 24h \
               --max-retries=10
 
-      - name: Execute Cloud Run Job for scrappers
+      - name: Deploy Cloud Run Job for scrappers
         run: |
-          gcloud run jobs execute crawlers-job --region=europe-west9
+          gcloud run jobs delete pharma_scrapper-job --region=europe-west9 --quiet || true
+          gcloud run jobs create pharma_scrapper-job \
+              --image=europe-west9-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job:latest \
+              --region=europe-west9 \
+              --args "modules.scrappers.pharma_scrapper" \
+              --memory=4Gi  \
+              --task-timeout 24h \
+              --max-retries=10
+
+      - name: Deploy Cloud Run Job for download_images
+        run: |
+          gcloud run jobs delete download_images-job --region=europe-west9 --quiet || true
+          gcloud run jobs create download_images-job \
+              --image=europe-west9-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job:latest \
+              --region=europe-west9 \
+              --args "modules.download_images.save_to_gcs" \
+              --memory=4Gi  \
+              --task-timeout 24h \
+              --max-retries=10
 
       - name: Cleanup temporary files
         run: rm -f utils/configfournisseur-data.json
