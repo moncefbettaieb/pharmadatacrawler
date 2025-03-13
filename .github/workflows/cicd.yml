@@ -81,8 +81,8 @@ jobs:
 
       - name: Deploy Cloud Run Job for save_sitemaps_links_to_mongo
         run: |
-          gcloud run jobs delete save_sitemaps_links_to_mongo-job --region=europe-west9 --quiet || true
-          gcloud run jobs create save_sitemaps_links_to_mongo-job \
+          gcloud run jobs delete save-sitemaps-links-to-mongo-job --region=europe-west9 --quiet || true
+          gcloud run jobs create save-sitemaps-links-to-mongo-job \
               --image=europe-west9-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job:latest \
               --region=europe-west9 \
               --args "modules.scrappers.save_sitemaps_links_to_mongo" \
@@ -90,10 +90,10 @@ jobs:
               --task-timeout 24h \
               --max-retries=10
 
-      - name: Deploy Cloud Run Job for scrappers
+      - name: Deploy Cloud Run Job for pharma-scrapper
         run: |
-          gcloud run jobs delete pharma_scrapper-job --region=europe-west9 --quiet || true
-          gcloud run jobs create pharma_scrapper-job \
+          gcloud run jobs delete pharma-scrapper-job --region=europe-west9 --quiet || true
+          gcloud run jobs create pharma-scrapper-job \
               --image=europe-west9-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job:latest \
               --region=europe-west9 \
               --args "modules.scrappers.pharma_scrapper" \
@@ -101,10 +101,10 @@ jobs:
               --task-timeout 24h \
               --max-retries=10
 
-      - name: Deploy Cloud Run Job for download_images
+      - name: Deploy Cloud Run Job for download-images
         run: |
-          gcloud run jobs delete download_images-job --region=europe-west9 --quiet || true
-          gcloud run jobs create download_images-job \
+          gcloud run jobs delete download-images-job --region=europe-west9 --quiet || true
+          gcloud run jobs create download-images-job \
               --image=europe-west9-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job:latest \
               --region=europe-west9 \
               --args "modules.download_images.save_to_gcs" \
