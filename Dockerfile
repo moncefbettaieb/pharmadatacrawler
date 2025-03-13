@@ -2,11 +2,13 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# Installer Chromium + Driver + dépendances
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    wget \
-    gnupg \
-    ca-certificates \
-    unzip \
+    chromium \
+    chromium-driver \
+    libnss3 \
+    libxss1 \
+    libappindicator3-1 \
     fonts-liberation \
     libasound2 \
     libatk-bridge2.0-0 \
@@ -14,18 +16,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libx11-xcb1 \
     libxcomposite1 \
     libxdamage1 \
-    libxss1 \
-    libnss3 \
     libgbm1 \
     libu2f-udev \
     libxtst6 \
-    chromium \
+    ca-certificates \
+    wget \
+    gnupg \
+    unzip \
     && rm -rf /var/lib/apt/lists/*
 
+# Copier votre code
 COPY . .
 
+# Installer les dépendances Python (Selenium, etc.)
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Utiliser le binaire Chromium et le chromedriver installés
 ENV PYTHONPATH="/app"
 
 ENTRYPOINT ["python", "-m"]

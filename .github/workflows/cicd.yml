@@ -88,7 +88,7 @@ jobs:
               --args "modules.scrappers.save_sitemaps_links_to_mongo" \
               --memory=4Gi  \
               --task-timeout 24h \
-              --max-retries=10
+              --max-retries=5
 
       - name: Deploy Cloud Run Job for pharma-scrapper
         run: |
@@ -99,7 +99,7 @@ jobs:
               --args "modules.scrappers.pharma_scrapper" \
               --memory=4Gi  \
               --task-timeout 24h \
-              --max-retries=10
+              --max-retries=5
 
       - name: Deploy Cloud Run Job for download-images
         run: |
@@ -110,7 +110,7 @@ jobs:
               --args "modules.download_images.save_to_gcs" \
               --memory=4Gi  \
               --task-timeout 24h \
-              --max-retries=10
+              --max-retries=5
 
       - name: Cleanup temporary files
         run: rm -f utils/configfournisseur-data.json
@@ -168,7 +168,7 @@ jobs:
               --args "src.pharma_crawler.main" \
               --memory=4Gi  \
               --task-timeout 24h \
-              --max-retries=10
+              --max-retries=5
 
       - name: Execute Cloud Run Job for scrappers
         run: |
