@@ -17,19 +17,27 @@ def process_sitemap_entries(driver, db, last_execution=None):
         driver = settings.configure_selenium()
     if db is None:
         db = MongoConnection.get_instance()
-    for sitemap_entry in sitemaps_collection.find():
+    if last_execution is not None:
+        last_execution_dt = datetime.strptime(last_execution, "%d-%m-%Y")
+        items = sitemaps_collection.find({
+            "lastmod": {
+            "$gt": last_execution_dt.strftime("%Y-%m-%d")
+            }
+        })
+        doc_count = sitemaps_collection.count_documents({
+            "lastmod": {
+            "$gt": last_execution_dt.strftime("%Y-%m-%d")
+            }
+        })
+        print(f"Processing {doc_count} items since {last_execution}")
+    else:
+        items = sitemaps_collection.find()
+    for sitemap_entry in items:
         loc = sitemap_entry.get("loc")
-        lastmod = sitemap_entry.get("lastmod")
         source = sitemap_entry.get("source")
 
         if loc is None or source is None:
             print(f"Skipping invalid sitemap entry: {sitemap_entry}")
-            continue
-
-        lastmod_date = datetime.strptime(lastmod, "%Y-%m-%d") if lastmod else None
-
-        if last_execution is not None and lastmod_date and lastmod_date <= last_execution:
-            print(f"Skipping {loc}, lastmod {lastmod_date} <= last_execution {last_execution}")
             continue
 
         try:
@@ -42,14 +50,14 @@ def process_sitemap_entries(driver, db, last_execution=None):
             for item in scraped_data:
                 if item is not None: 
                     item["source"] = source
-                insert_scraped_data(source, scraped_data, db, last_execution)
+                insert_scraped_data(source.replace('-','_'), scraped_data, db)
 
             print(f"Inserted {len(scraped_data)} items from {loc} into {source}")
 
         except Exception as e:
             print(f"Error processing {loc}: {e}")
 
-def insert_scraped_data(source, data, db, last_execution=None):
+def insert_scraped_data(source, data, db):
     """
     Insérer les données dans la collection MongoDB avec des champs supplémentaires.
     """
@@ -65,10 +73,7 @@ if __name__ == "__main__":
     logger.info(f"Application Started Environnement : {settings.APP_ENV}.")
     db = MongoConnection.get_instance()
     driver = settings.configure_selenium()
-    last_execution_arg = sys.argv[1] if len(sys.argv) > 1 else None
-    last_execution = (
-        datetime.strptime(last_execution_arg, "%Y-%m-%d") if last_execution_arg else None
-    )
+    last_execution = sys.argv[1] if len(sys.argv) > 1 else None
     logger.info(f"Last execution was at : {last_execution}.")
     try:
         process_sitemap_entries(driver, db, last_execution)

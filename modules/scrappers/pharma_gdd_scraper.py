@@ -87,6 +87,7 @@ def scrape_pharma_gdd(driver, url):
 
         # Créer le dictionnaire du produit
         product_data = [{
+            "url_source": url,
             "title": title,
             "cip_code": cip_code,
             "brand": brand,
