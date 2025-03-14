@@ -84,7 +84,7 @@ jobs:
           gcloud run jobs delete scrappers-uat-job --region=europe-west9 --quiet || true
           gcloud run jobs create scrappers-uat-job --region=europe-west9 \
               --image=europe-west9-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-uat-job:latest \
-              --args "modules.scrappers.save_sitemaps_links_to_mongo" \
+              --args "modules.scrappers.save_sitemaps_links_to_mongo" --args "12-03-2025"  \
               --memory=4Gi  \
               --task-timeout 24h \
               --max-retries=5
