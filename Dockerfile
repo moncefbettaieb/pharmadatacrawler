@@ -35,4 +35,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 ENV PYTHONPATH="/app"
 
 ENTRYPOINT ["python", "-m"]
-CMD ["scrappers.save_sitemaps_links_to_mongo"]
+CMD ["modules.scrappers.save_sitemaps_links_to_mongo"]

@@ -16,9 +16,9 @@ def scrape_pharma_du_centre(driver, url):
     try:
         driver.get(url)
         logging.info(f"Chargement de l'URL : {url}")
-        driver.implicitly_wait(3)
+        driver.implicitly_wait(2)
         try:
-            title = driver.find_element(By.CLASS_NAME, 'product-title').text
+            title = driver.xfind_element(By.CLASS_NAME, 'product-title').text
         except:
             title = None
         try:
@@ -84,6 +84,7 @@ def scrape_pharma_du_centre(driver, url):
          
         # Créer le dictionnaire du produit
         product_data = {
+            "url_source": url,
             "title": title,
             "cip_code": cip_code,
             "brand": brand,
