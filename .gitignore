@@ -16,3 +16,5 @@ logs/app.log
 modules/download_images/__pycache__/*
 Dockerfile.bak
 mong-keyfile
+utils/db/__pycache__/*
+modules/download_images/__pycache__/__init__.*
