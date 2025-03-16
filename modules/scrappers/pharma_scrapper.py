@@ -75,8 +75,8 @@ if __name__ == "__main__":
     logger.info(f"Application Started Environnement : {settings.APP_ENV}.")
     db = MongoConnection.get_instance()
     driver = settings.configure_selenium()
-    if len(args) > 1 and args[1] == "None":
-        args.pop(1)
+    if len(sys.args) > 1 and sys.args[1] == "None":
+        sys.args.pop(1)
     last_execution = sys.argv[1] if len(sys.argv) > 1 else None
     print(f"[DEBUG Container] ARGV: {sys.argv}")
     try:
