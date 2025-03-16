@@ -18,7 +18,7 @@ def process_sitemap_entries(driver, db, last_execution=None):
     if db is None:
         db = MongoConnection.get_instance()
     logger.info(f"Last execution was at : {last_execution}.")
-    if last_execution is not None  or last_execution != "None":
+    if last_execution is not None and last_execution != "None":
         last_execution_dt = datetime.strptime(last_execution, "%d-%m-%Y")
         items = sitemaps_collection.find({
             "lastmod": {
