@@ -84,6 +84,6 @@ if __name__ == "__main__":
     except Exception as e:
         logger.error(f"Erreur lors du traitement des entrées de sitemap : {e}")
     finally:
-        logger.error(f"quit driver")
+        logger.info(f"quit driver")
         driver.quit()
     logger.info("Application terminée.")
