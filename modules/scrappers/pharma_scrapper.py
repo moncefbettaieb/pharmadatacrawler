@@ -17,7 +17,8 @@ def process_sitemap_entries(driver, db, last_execution=None):
         driver = settings.configure_selenium()
     if db is None:
         db = MongoConnection.get_instance()
-    if last_execution is not None:
+    logger.info(f"Last execution was at : {last_execution}.")
+    if last_execution is not None  or last_execution != "None":
         last_execution_dt = datetime.strptime(last_execution, "%d-%m-%Y")
         items = sitemaps_collection.find({
             "lastmod": {
@@ -32,6 +33,7 @@ def process_sitemap_entries(driver, db, last_execution=None):
         print(f"Processing {doc_count} items since {last_execution}")
     else:
         items = sitemaps_collection.find()
+    
     for sitemap_entry in items:
         loc = sitemap_entry.get("loc")
         source = sitemap_entry.get("source")
@@ -74,7 +76,6 @@ if __name__ == "__main__":
     db = MongoConnection.get_instance()
     driver = settings.configure_selenium()
     last_execution = sys.argv[1] if len(sys.argv) > 1 else None
-    logger.info(f"Last execution was at : {last_execution}.")
     try:
         process_sitemap_entries(driver, db, last_execution)
     except Exception as e:
