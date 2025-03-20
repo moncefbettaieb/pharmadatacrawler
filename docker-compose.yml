@@ -1,3 +1,8 @@
+version: '3.8'
+
+networks:
+  mongo_cluster:  # Création d'un réseau dédié
+
 services:
   mongo1:
     image: mongo:latest
@@ -12,6 +17,8 @@ services:
       - ./mongo-keyfile:/data/keyfile
       - "mongo1_data:/data/db"
       - "mongo1_config:/data/configdb"
+    networks:
+      - mongo_cluster  # Ajout du container au réseau dédié
 
   mongo2:
     image: mongo:latest
@@ -26,11 +33,13 @@ services:
       - ./mongo-keyfile:/data/keyfile
       - "mongo2_data:/data/db"
       - "mongo2_config:/data/configdb"
+    networks:
+      - mongo_cluster  # Ajout du container au réseau dédié
 
   mongo3:
     image: mongo:latest
     container_name: mongo3
-    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27019", "--auth" , "--keyFile", "/data/keyfile"]
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27019", "--auth", "--keyFile", "/data/keyfile"]
     ports:
       - "27019:27019"
     environment:
@@ -40,6 +49,8 @@ services:
       - ./mongo-keyfile:/data/keyfile
       - "mongo3_data:/data/db"
       - "mongo3_config:/data/configdb"
+    networks:
+      - mongo_cluster  # Ajout du container au réseau dédié
 
 volumes:
   mongo1_data:
