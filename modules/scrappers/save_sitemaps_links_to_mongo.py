@@ -8,7 +8,20 @@ from utils.db.MongoConnection import MongoConnection
 
 def insert_sitemap(db, collection_name, document):
     collection = db[collection_name]
-    collection.insert_one(document)
+    filter_query = {
+        "loc": document["loc"],
+        "source": document["source"]
+    }
+    update_doc = {
+        "$set": {
+            "lastmod": document["lastmod"],
+            "priority": document["priority"],
+            "source_sitemap": document["source_sitemap"],
+            "inserted_day": document["inserted_day"],
+        }
+    }
+
+    collection.update_one(filter_query, update_doc, upsert=True)
 
 def fetch_sitemap_with_selenium(driver, url):
     try:
@@ -38,10 +51,20 @@ def parse_sitemap(xml_content):
             loc = url_element.find("ns:loc", namespace)
             lastmod = url_element.find("ns:lastmod", namespace)
             priority = url_element.find("ns:priority", namespace)
+
+            lastmod_dt = None
+            if lastmod is not None:
+                try:
+                    lastmod_dt = datetime.fromisoformat(lastmod.text)
+                except ValueError:
+                    try:
+                        lastmod_dt = datetime.strptime(lastmod.text, "%Y-%m-%d")
+                    except ValueError:
+                        print(f"Format de date inconnu pour lastmod: {lastmod.text}")
             
             urls.append({
                 "loc": loc.text if loc is not None else None,
-                "lastmod": lastmod.text if lastmod is not None else None,
+                "lastmod": lastmod_dt,
                 "priority": float(priority.text) if priority is not None else None,
             })
         
@@ -78,6 +101,7 @@ def save_sitemaps_to_mongo_with_selenium(driver, db, file_path, collection_name,
                     entry["source"] = source
                     entry["source_sitemap"] = link 
                     entry["inserted_day"] = INSERTED_DAY
+                    entry["processed_mod"] = None
                     insert_sitemap(db, collection_name, entry)
                 print(f"Inserted {len(parsed_data)} entries from {link}")
             except Exception as e:
@@ -99,6 +123,5 @@ if __name__ == "__main__":
     COLLECTION_NAME = "sitemaps"
     INSERTED_DAY = datetime.now().strftime("%d%m%Y")
     db = MongoConnection.get_instance()
-    db[COLLECTION_NAME].drop()
     driver = settings.configure_selenium()
     save_sitemaps_to_mongo_with_selenium(driver, db, FILE_PATH, COLLECTION_NAME, INSERTED_DAY)

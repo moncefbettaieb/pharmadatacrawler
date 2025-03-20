@@ -22,7 +22,17 @@ def process_sitemap_entries(driver, db, last_execution=None, sources=None):
     logger.info(f"Last execution was at : {last_execution}.")
     
     # Construire la requête en fonction de last_execution et des sources
-    query = {}
+    query = {
+    "$or": [
+        { "processed_mod": { "$exists": False } },
+        { "processed_mod": None },
+        {
+            "$expr": {
+                "$gt": ["$lastmod", "$processed_mod"]
+            }
+        }
+    ]
+}
     if last_execution is not None and last_execution != "None":
         last_execution_dt = datetime.strptime(last_execution, "%d-%m-%Y")
         query["lastmod"] = {"$gt": last_execution_dt.strftime("%Y-%m-%d")}
@@ -63,7 +73,9 @@ def process_sitemap_entries(driver, db, last_execution=None, sources=None):
                 if item is not None: 
                     item["source"] = source
             insert_scraped_data(source.replace('-', '_'), scraped_data, db)
-
+            sitemaps_collection.update_one(
+            {"_id": sitemap_entry["_id"]},
+            {"$set": {"processed_mod": sitemap_entry["lastmod"]}})
             print(f"Inserted {len(scraped_data)} items from {loc} into {source}")
 
         except Exception as e:
