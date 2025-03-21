@@ -93,7 +93,7 @@ def insert_scraped_data(source, data, db):
 
 if __name__ == "__main__":
     logging.config.fileConfig('utils/config/logging.conf')
-    logger = logging.getLogger('Pharma Data')
+    logger = logging.getLogger("pharma_crawler")
     logger.info(f"Application Started Environnement : {settings.APP_ENV}.")
     
     db = MongoConnection.get_instance()
