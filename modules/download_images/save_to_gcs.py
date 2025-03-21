@@ -10,7 +10,6 @@ from google.cloud import storage
 
 from utils.config import settings
 from utils.db.postgres_utils import get_postgres_connection
-from utils.config.settings import NB_DOWNLOAD_IMAGES
 
 
 def download_and_upload_images_to_gcs(
@@ -41,11 +40,11 @@ def download_and_upload_images_to_gcs(
                 SELECT image_id, cip_code, image_url
                 FROM {table}
                 WHERE downloaded = false
-            """).format(table=sql.Identifier(table_name))
+            """).format(table=sql.Identifier("uat", table_name))
 
             if limit is not None:
                 query = query + sql.SQL(" LIMIT {limit}").format(limit=sql.Literal(limit))
-
+            logging.info(f"Exécution de la requête : {query}")
             cur.execute(query)
             rows = cur.fetchall()
 
@@ -57,10 +56,9 @@ def download_and_upload_images_to_gcs(
 
             # Pour chaque CIP, on boucle sur les images de ce CIP
             for cip_code, image_data_list in images_by_cip.items():
-                logging.info(f"Traitement de {len(image_data_list)} image(s) pour le CIP {cip_code}.")
-
-                # On indexe les images pour les renommer en <cip_code>_1.jpeg, <cip_code>_2.jpeg, ...
-                for idx, (image_id, image_url) in enumerate(image_data_list, start=1):
+                total_images = len(image_data_list)
+                logging.info(f"Traitement de {total_images} image(s) pour le CIP {cip_code}.")
+                for reverse_idx, (image_id, image_url) in zip(reversed(range(total_images)), image_data_list):
                     try:
                         # 1) Charger la page dans Selenium
                         driver.get(image_url)
@@ -76,8 +74,8 @@ def download_and_upload_images_to_gcs(
 
                     # 3) Définir le chemin (blob_name) et nom de fichier
                     #    Exemple : CIP123456_1.jpeg
-                    #    On peut aussi les ranger dans un dossier CIP, ex: {cip_code}/{cip_code}_{idx}.jpeg
-                    filename = f"{cip_code}_{idx}.jpeg"
+                    #    On peut aussi les ranger dans un dossier CIP, ex: {cip_code}/{cip_code}_{reverse_idx}.jpeg
+                    filename = f"{cip_code}_{reverse_idx}.jpeg"
                     blob_name = f"{cip_code}/{filename}"  # sous-dossier = cip_code
 
                     # 4) Uploader dans GCS
@@ -90,7 +88,7 @@ def download_and_upload_images_to_gcs(
                             UPDATE {table}
                             SET gcs_path = %s, downloaded = true
                             WHERE image_id = %s
-                        """).format(table=sql.Identifier(table_name))
+                        """).format(table=sql.Identifier(settings.APP_ENV, table_name))
 
                         cur.execute(update_query, (blob_name, image_id))
                         conn.commit()
@@ -110,19 +108,18 @@ def download_and_upload_images_to_gcs(
 
 if __name__ == "__main__":
     logging.config.fileConfig('utils/config/logging.conf')
-    logger = logging.getLogger('download_images.save_to_gcs')
+    logger = logging.getLogger('save_to_gcs')
     logger.info("Début du script de téléchargement et upload d'images.")
 
-    # Initialisation Selenium
     driver = settings.configure_selenium()
-
-    TABLE_NAME = "dim_images"
-    GCS_BUCKET_NAME = "pharma_images"
+    table_name = settings.SAVE_GCS_IMAGES_CONFIG[f"table_name"]
+    gcs_bucket_name = settings.SAVE_GCS_IMAGES_CONFIG["gcs_bucket_name"]
+    limit = settings.SAVE_GCS_IMAGES_CONFIG["nb_download_images"]
 
     download_and_upload_images_to_gcs(
-        table_name=TABLE_NAME,
-        gcs_bucket_name=GCS_BUCKET_NAME,
-        limit=NB_DOWNLOAD_IMAGES  # ou None si vous voulez traiter toutes les images
+        table_name=table_name,
+        gcs_bucket_name=gcs_bucket_name,
+        limit=limit  # ou None si vous voulez traiter toutes les images
     )
 
     logger.info("Fin du script.")
