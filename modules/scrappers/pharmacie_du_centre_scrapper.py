@@ -18,7 +18,7 @@ def scrape_pharma_du_centre(driver, url):
         logging.info(f"Chargement de l'URL : {url}")
         driver.implicitly_wait(2)
         try:
-            title = driver.xfind_element(By.CLASS_NAME, 'product-title').text
+            title = driver.find_element(By.CLASS_NAME, 'product-title').text
         except:
             title = None
         try:
