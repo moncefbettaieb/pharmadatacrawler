@@ -76,10 +76,21 @@ def process_sitemap_entries(driver, db, last_execution=None, sources=None):
             sitemaps_collection.update_one(
             {"_id": sitemap_entry["_id"]},
             {"$set": {"processed_mod": sitemap_entry["lastmod"]}})
-            print(f"Inserted {len(scraped_data)} items from {loc} into {source}")
+            print(f"Inserted item from {loc} into {source}")
 
         except Exception as e:
-            print(f"Error processing {loc}: {e}")
+            logger.info(f"Error processing test {source}: {loc}")
+            not_prceessed_product =[{
+            "source": source,
+            "url_source": loc,
+            "processed_time": datetime.now(),
+            "exception": str(e)
+        }]
+            insert_scraped_data("links_not_processed", not_prceessed_product, db)
+            sitemaps_collection.update_one(
+            {"_id": sitemap_entry["_id"]},
+            {"$set": {"processed_mod": sitemap_entry["lastmod"]}})
+            logger.error(f"Error processing {loc}: {e}")
 
 def insert_scraped_data(source, data, db):
     """

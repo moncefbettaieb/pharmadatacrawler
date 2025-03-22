@@ -69,7 +69,11 @@ SCHEDULER_CONFIG = {
 # Autres configurations
 LOGGING_LEVEL = os.getenv("LOGGING_LEVEL", "DEBUG")
 
-NB_DOWNLOAD_IMAGES = os.getenv("NB_DOWNLOAD_IMAGES")
+SAVE_GCS_IMAGES_CONFIG = {
+    "table_name": os.getenv("TABLE_NAME", "dim_images"),
+    "gcs_bucket_name": os.getenv("GCS_BUCKET_NAME", "pharma_images"),
+    "nb_download_images": os.getenv("NB_DOWNLOAD_IMAGES", None),
+     }
 
 # Test de configuration au démarrage
 if APP_ENV not in ["dev", "uat", "prod"]:
