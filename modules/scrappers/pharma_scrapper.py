@@ -51,6 +51,8 @@ def process_sitemap_entries(driver, db, last_execution=None, sources=None):
     
     # Traitement de chaque document
     for sitemap_entry in items:
+        print(f"remaining items: {doc_count}")
+        doc_count -= 1
         loc = sitemap_entry.get("loc")
         source = sitemap_entry.get("source")
 
