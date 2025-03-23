@@ -40,11 +40,10 @@ def download_and_upload_images_to_gcs(
                 SELECT image_id, cip_code, image_url
                 FROM {table}
                 WHERE downloaded = false
-            """).format(table=sql.Identifier("uat", table_name))
-
+            """).format(table=sql.Identifier(settings.APP_ENV, table_name))
+            print("query1 : ", query)
             if limit is not None:
                 query = query + sql.SQL(" LIMIT {limit}").format(limit=sql.Literal(limit))
-            logging.info(f"Exécution de la requête : {query}")
             cur.execute(query)
             rows = cur.fetchall()
 
@@ -89,6 +88,8 @@ def download_and_upload_images_to_gcs(
                             SET gcs_path = %s, downloaded = true
                             WHERE image_id = %s
                         """).format(table=sql.Identifier(settings.APP_ENV, table_name))
+
+                        print("query2 : ", update_query)
 
                         cur.execute(update_query, (blob_name, image_id))
                         conn.commit()
