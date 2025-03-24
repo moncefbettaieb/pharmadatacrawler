@@ -31,7 +31,6 @@ def clean_scraped_data(product_data: dict) -> dict:
 
     # Copie pour ne pas modifier l'original
     cleaned_data = product_data.copy()
-    print(f"cleaned_data : {cleaned_data}")
 
     # Exemples de fonctions de nettoyage
     def _nullify_string(s: str) -> Optional[str]:
@@ -119,4 +118,4 @@ def clean_scraped_data(product_data: dict) -> dict:
         cleaned_data["cip_code"] = only_digits if only_digits else None
 
     
-    return cleaned_data
+    return [cleaned_data]
