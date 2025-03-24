@@ -18,3 +18,4 @@ Dockerfile.bak
 utils/db/__pycache__/*
 modules/download_images/__pycache__/__init__.*
 mongo-keyfile
+utils/cleaning/__pycache__/*

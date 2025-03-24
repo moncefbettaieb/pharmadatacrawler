@@ -3,6 +3,7 @@ import logging
 import logging.config
 from datetime import datetime
 from utils.config import settings
+from utils.cleaning.clean_scraped_data import clean_scraped_data
 from utils.db.MongoConnection import MongoConnection
 from modules.scrappers import pharma_gdd_scraper
 from modules.scrappers import pharmacie_du_centre_scrapper
@@ -70,16 +71,12 @@ def process_sitemap_entries(driver, db, last_execution=None, sources=None):
                 case _:
                     print(f"No scrapper implemented for source: {source}")
                     continue
-
-            for item in scraped_data:
-                if item is not None: 
-                    item["source"] = source
-            insert_scraped_data(source.replace('-', '_'), scraped_data, db)
+            clean_product = clean_scraped_data(scraped_data[0])
+            print(f"Inserted item from {loc} into {source}")
+            insert_scraped_data(source.replace('-', '_'), clean_product, db)
             sitemaps_collection.update_one(
             {"_id": sitemap_entry["_id"]},
             {"$set": {"processed_mod": sitemap_entry["lastmod"]}})
-            print(f"Inserted item from {loc} into {source}")
-
         except Exception as e:
             logger.info(f"Error processing test {source}: {loc}")
             not_prceessed_product =[{
