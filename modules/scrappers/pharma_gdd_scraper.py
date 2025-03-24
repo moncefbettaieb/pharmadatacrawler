@@ -102,7 +102,6 @@ def scrape_pharma_gdd(driver, url):
             "sous_categorie_2": sous_categorie_2,
             "image_links": data_src_list
         }]
-
         return product_data
 
     except Exception as e:

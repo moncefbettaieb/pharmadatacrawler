@@ -4,8 +4,6 @@ from datetime import datetime
 from utils.config import settings
 from utils.db.MongoConnection import MongoConnection
 from modules.scrappers.save_sitemaps_links_to_mongo import save_sitemaps_to_mongo_with_selenium
-from modules.scrappers import pharma_scrapper
-from modules.download_images import save_to_gcs
 
 if __name__ == "__main__":
     logging.config.fileConfig('utils/config/logging.conf')

@@ -88,9 +88,6 @@ def download_and_upload_images_to_gcs(
                             SET gcs_path = %s, downloaded = true
                             WHERE image_id = %s
                         """).format(table=sql.Identifier(settings.APP_ENV, table_name))
-
-                        print("query2 : ", update_query)
-
                         cur.execute(update_query, (blob_name, image_id))
                         conn.commit()
                         logging.info(f"Image {image_url} => {blob_name} uploadée avec succès.")
