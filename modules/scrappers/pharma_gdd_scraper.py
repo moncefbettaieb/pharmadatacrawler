@@ -70,17 +70,17 @@ def scrape_pharma_gdd(driver, url):
             presentation_html = driver.find_element(By.ID, "Présentation").get_attribute("outerHTML")
             presentation = extract_clean_text_from_html(presentation_html)
         except:
-            presentation_html = None
+            presentation = None
         try:
             usage_html = driver.find_element(By.ID, "usages").get_attribute("outerHTML")
             usage = extract_clean_text_from_html(usage_html)
         except:
-            usage_html = None
+            composition = None
         try:
             composition_html = driver.find_element(By.ID, "Composition").get_attribute("outerHTML")
             composition = extract_clean_text_from_html(composition_html)
         except:
-            composition_html = None
+            composition = None
         try:
             texts = driver.find_elements(By.CLASS_NAME, 'text')
             match1 = re.search(r"(La composition.*?)(?=Posologie)", texts[1].text, re.DOTALL)
