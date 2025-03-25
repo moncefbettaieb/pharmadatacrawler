@@ -75,7 +75,7 @@ def scrape_pharma_gdd(driver, url):
             usage_html = driver.find_element(By.ID, "usages").get_attribute("outerHTML")
             usage = extract_clean_text_from_html(usage_html)
         except:
-            composition = None
+            usage = None
         try:
             composition_html = driver.find_element(By.ID, "Composition").get_attribute("outerHTML")
             composition = extract_clean_text_from_html(composition_html)
