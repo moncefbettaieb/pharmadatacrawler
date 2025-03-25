@@ -3,6 +3,12 @@ import logging
 import logging.config
 from utils.config import settings
 from selenium.webdriver.common.by import By
+from bs4 import BeautifulSoup
+
+def extract_clean_text_from_html(html: str) -> str:
+    """Nettoie un bloc HTML et extrait le texte sans balises."""
+    soup = BeautifulSoup(html, "html.parser")
+    return soup.get_text(separator="\n", strip=True)
 
 def scrape_pharma_gdd(driver, url):
     """
@@ -31,19 +37,19 @@ def scrape_pharma_gdd(driver, url):
             reference = driver.find_element(By.CLASS_NAME, 'product-reference').text
             cip_code = "".join([char for char in reference if char.isdigit()])
         except:
-            cip_code = ""
+            cip_code = None
         try:
             brand = driver.find_element(By.CSS_SELECTOR, 'a.brand').text
         except:
-            brand = ""
+            brand = None
         try:
             long_desc = driver.find_element(By.CLASS_NAME, 'product-details').text
         except:
-            long_desc = ""
+            long_desc = None
         try:
             short_desc = driver.find_element(By.CLASS_NAME, 'description').text
         except:
-            short_desc = ""
+            short_desc = None
         try:
             breadcrumb_elements = driver.find_elements(By.CSS_SELECTOR, 'nav.nav-breadcrumb span[itemprop="name"]')
             breadcrumb_texts = [element.text for element in breadcrumb_elements]
@@ -51,9 +57,9 @@ def scrape_pharma_gdd(driver, url):
             sous_categorie_1 = breadcrumb_texts[2]
             sous_categorie_2 = breadcrumb_texts[3]
         except:
-            categorie = ""
-            sous_categorie_1 = ""
-            sous_categorie_2 = ""
+            categorie = None
+            sous_categorie_1 = None
+            sous_categorie_2 = None
         try:
             elements = driver.find_elements(By.CSS_SELECTOR, 'div.glider-container.main-image [data-src]')
             data_src_list = [element.get_attribute('data-src') for element in elements]
@@ -61,15 +67,30 @@ def scrape_pharma_gdd(driver, url):
             print(f"le data_src_list n'est pas existant")
 
         try:
+            presentation_html = driver.find_element(By.ID, "Présentation").get_attribute("outerHTML")
+            presentation = extract_clean_text_from_html(presentation_html)
+        except:
+            presentation = None
+        try:
+            usage_html = driver.find_element(By.ID, "usages").get_attribute("outerHTML")
+            usage = extract_clean_text_from_html(usage_html)
+        except:
+            usage = None
+        try:
+            composition_html = driver.find_element(By.ID, "Composition").get_attribute("outerHTML")
+            composition = extract_clean_text_from_html(composition_html)
+        except:
+            composition = None
+        try:
             texts = driver.find_elements(By.CLASS_NAME, 'text')
             match1 = re.search(r"(La composition.*?)(?=Posologie)", texts[1].text, re.DOTALL)
             match2 = re.search(r"(Posologie.*?)(?=Contre)", texts[1].text, re.DOTALL)
             match3 = re.search(r"(Contre.*?)(?=Conditionnement)", texts[1].text, re.DOTALL)
             match4 = re.search(r"(Conditionnement.*)", texts[1].text)
             if match1:
-                composition = match1.group(1).strip()
+                composition_fp = match1.group(1).strip()
             else: 
-                composition = match1
+                composition_fp = match1
             if match2:
                 posologie = match2.group(1).strip()
             else: 
@@ -93,7 +114,10 @@ def scrape_pharma_gdd(driver, url):
             "brand": brand,
             "short_desc": short_desc,
             "long_desc": long_desc,
+            "presentation": presentation,
+            "usage": usage,
             "composition": composition,
+            "composition_fp": composition_fp,
             "posologie": posologie,
             "contre_indication": contre_indication,
             "conditionnement": conditionnement,
@@ -101,7 +125,7 @@ def scrape_pharma_gdd(driver, url):
             "sous_categorie_1": sous_categorie_1,
             "sous_categorie_2": sous_categorie_2,
             "image_links": data_src_list,
-            "source": "pharma_gdd"
+            "source": "pharma-gdd"
         }]
         return product_data
 

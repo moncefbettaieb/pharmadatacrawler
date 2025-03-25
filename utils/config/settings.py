@@ -5,8 +5,7 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 
 # Charger les variables d'environnement depuis un fichier spécifique selon l'environnement
-APP_ENV = os.getenv("APP_ENV", "dev")  # Par défaut, l'environnement est "dev"
-env_file = f".env.{APP_ENV}" if APP_ENV in ["uat", "prod"] else ".env"
+APP_ENV = os.getenv("APP_ENV", "uat")  # Par défaut, l'environnement est "uat"
 load_dotenv()
 
 
@@ -15,7 +14,7 @@ DATABASE_URL = os.getenv("DATABASE_URL", 'localhost')
 
 # Configuration PostgreSQL
 POSTGRES_CONFIG = {
-    "host": os.getenv("POSTGRES_HOST", "localhost"),
+    "host": os.getenv("VM1_HOST", "localhost"),
     "port": int(os.getenv("POSTGRES_PORT", 5432)),
     "user": os.getenv("POSTGRES_USER", "your_user"),
     "password": os.getenv("POSTGRES_PASSWORD", "your_password"),
@@ -25,7 +24,7 @@ POSTGRES_CONFIG = {
 
 # Configuration MongoDB
 MONGO_CONFIG = {
-    "host": os.getenv("MONGO_HOST", "localhost"),
+    "host": os.getenv("VM1_HOST", "localhost"),
     "port": int(os.getenv("MONGO_PORT", 27017)),
     "username": os.getenv("MONGO_USER", ""),
     "password": os.getenv("MONGO_PASSWORD", ""),
@@ -70,14 +69,10 @@ SCHEDULER_CONFIG = {
 LOGGING_LEVEL = os.getenv("LOGGING_LEVEL", "DEBUG")
 
 SAVE_GCS_IMAGES_CONFIG = {
-    "table_name": os.getenv("TABLE_NAME", "dim_images"),
+    "table_name": os.getenv("TABLE_NAME_IMAGES", "dim_images"),
     "gcs_bucket_name": os.getenv("GCS_BUCKET_NAME", "pharma_images"),
     "nb_download_images": os.getenv("NB_DOWNLOAD_IMAGES", None),
      }
-
-# Test de configuration au démarrage
-if APP_ENV not in ["dev", "uat", "prod"]:
-    raise ValueError(f"Environnement inconnu : {APP_ENV}")
 
 
 def load_config():
@@ -86,7 +81,7 @@ def load_config():
     """
     config = {}
     config['DATABASE_URL'] = os.getenv("DATABASE_URL", 'localhost')
-    config['APP_ENV'] = os.getenv("APP_ENV", "dev")
+    config['APP_ENV'] = os.getenv("APP_ENV", "uat")
 
     return config
 
