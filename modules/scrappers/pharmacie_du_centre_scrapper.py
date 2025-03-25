@@ -96,7 +96,7 @@ def scrape_pharma_du_centre(driver, url):
             "sous_categorie_2": sous_categorie_2,
             "sous_categorie_3": sous_categorie_3,
             "image_src": image_src,
-            "source": "pharmacie_du_centre"
+            "source": "pharmacie-du-centre"
         }
         product_data.update(data)
         return [product_data]

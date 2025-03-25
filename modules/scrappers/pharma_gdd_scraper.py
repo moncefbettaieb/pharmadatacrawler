@@ -117,7 +117,7 @@ def scrape_pharma_gdd(driver, url):
             "sous_categorie_1": sous_categorie_1,
             "sous_categorie_2": sous_categorie_2,
             "image_links": data_src_list,
-            "source": "pharma_gdd"
+            "source": "pharma-gdd"
         }]
         return product_data
 
