@@ -86,7 +86,7 @@ def load_config():
     """
     config = {}
     config['DATABASE_URL'] = os.getenv("DATABASE_URL", 'localhost')
-    config['APP_ENV'] = os.getenv("APP_ENV", "dev")
+    config['APP_ENV'] = os.getenv("APP_ENV", "uat")
 
     return config
 
