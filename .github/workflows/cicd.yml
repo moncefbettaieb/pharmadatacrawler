@@ -1,154 +1,168 @@
-name: CI/CD Workflow
+name: Crawler CI/CD
 
 on:
   push:
     branches:
-      - main
+      - '**'                 # Toutes les branches
   pull_request:
     branches:
-      - main
-    types:
-      - closed
+      - develop              # PR vers develop => UAT
   release:
-    types:
-      - created
+    types: [created]         # Tag => prod
 
 jobs:
-  build-and-run-dev:
-    if: github.event_name == 'pull_request' && github.event.action != 'closed'
+  build-and-test-dev:
+    environment: dev
+    if: github.event_name == 'push' && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/develop'
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
         with:
-          python-version: "3.11"
-
-      - name: Install dependencies
-        run: |
+          python-version: "3.12"
+      - uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - uses: google-github-actions/setup-gcloud@v1
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+      - run: |
           python -m venv env
           source env/bin/activate
           pip install -r requirements.txt
+#         pytest --maxfail=5 --disable-warnings
+      - run: |
+          echo "${{ secrets.GCP_SA_KEY }}" > utils/config/fournisseur-data.json
+      - run: |
+          gcloud auth configure-docker europe-west9-docker.pkg.dev
+          docker build -t europe-west9-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-dev-job:latest .
+          docker push europe-west9-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-dev-job:latest
+      - run: |
+          gcloud run jobs delete scrappers-dev-job --region=europe-west9 --quiet || true
+          gcloud run jobs create scrappers-dev-job \
+            --region=europe-west9 \
+            --image=europe-west9-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-dev-job:latest \
+            --args "modules.scrappers.save_sitemaps_links_to_mongo" \
+            --memory=4Gi \
+            --task-timeout=24h \
+            --set-env-vars VM1_HOST=${{ vars.VM1_HOST }} \
+            --set-env-vars POSTGRES_PORT=${{ vars.POSTGRES_PORT }} \
+            --set-env-vars POSTGRES_USER=${{ vars.POSTGRES_USER }} \
+            --set-env-vars POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
+            --set-env-vars POSTGRES_DB=${{ vars.POSTGRES_DB }} \
+            --set-env-vars POSTGRES_DWH_DB=${{ vars.POSTGRES_DWH_DB }} \
+            --set-env-vars MONGO_PORT=${{ vars.MONGO_PORT }} \
+            --set-env-vars MONGO_USER=${{ vars.MONGO_USER }} \
+            --set-env-vars MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }} \
+            --set-env-vars MONGO_DB=${{ vars.MONGO_DB }} \
+            --set-env-vars REPLICA_SET=${{ vars.REPLICA_SET }} \
+            --set-env-vars LOGGING_LEVEL=${{ vars.LOGGING_LEVEL }} \
+            --set-env-vars SCRAPER_USER_AGENT=${{ vars.SCRAPER_USER_AGENT }} \
+            --set-env-vars SCRAPER_TIMEOUT=${{ vars.SCRAPER_TIMEOUT }} \
+            --set-env-vars SCRAPER_RETRY_ATTEMPTS=${{ vars.SCRAPER_RETRY_ATTEMPTS }} \
+            --set-env-vars SCRAPER_FREQUENCY=${{ vars.SCRAPER_FREQUENCY }} \
+            --set-env-vars APP_ENV=${{ vars.APP_ENV }} \
+            --set-env-vars TABLE_NAME_IMAGES=${{ vars.TABLE_NAME_IMAGES }} \
+            --set-env-vars GCS_BUCKET_NAME=${{ vars.GCS_BUCKET_NAME }} \
+            --set-env-vars GOOGLE_APPLICATION_CREDENTIALS=${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }} \
+            --max-retries=5
+      - run: rm -f .env utils/config/fournisseur-data.json
 
   deploy-uat:
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/heads/main') || (github.event_name == 'pull_request' && github.event.action == 'closed')
+    environment: staging
+    if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'develop'
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Authenticate with GCP
-        uses: google-github-actions/auth@v1
+      - uses: actions/checkout@v3
+      - uses: google-github-actions/auth@v1
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-      - name: Set up GCloud CLI
-        uses: google-github-actions/setup-gcloud@v1
+      - uses: google-github-actions/setup-gcloud@v1
         with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-      
-      - name: Inject UAT .env
-        run: echo "${{ secrets.ENV_UAT }}" > .env
-
-      - name: Source .env and export variables
-        run: |
-          set -a
-          source .env
-          set +a
-
-      - name: Set up Google Cloud authentication
-        env:
-          GCP_SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SA_KEY }}
-        run: |
-          cat <<EOF > utils/config/fournisseur-data.json
-          $GCP_SERVICE_ACCOUNT_KEY
-          EOF
-          export GOOGLE_APPLICATION_CREDENTIALS=utils/config/fournisseur-data.json
-          echo "GOOGLE_APPLICATION_CREDENTIALS is set to utils/config/fournisseur-data.json"
-
-      - name: Authenticate Docker with GCP Artifact Registry
-        run: |
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+      - run: |
+          echo "${{ secrets.GCP_SA_KEY }}" > utils/config/fournisseur-data.json
+      - run: |
           gcloud auth configure-docker europe-west9-docker.pkg.dev
-
-      - name: Build and Push Docker images
-        run: |
-          docker build -t europe-west9-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-uat-job:latest .
-          docker push europe-west9-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-uat-job:latest
-
-      - name: Deploy Cloud Run Job for crawlers
-        run: |
+          docker build -t europe-west9-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-uat-job:latest .
+          docker push europe-west9-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-uat-job:latest
+      - run: |
           gcloud run jobs delete scrappers-uat-job --region=europe-west9 --quiet || true
-          gcloud run jobs create scrappers-uat-job --region=europe-west9 \
-              --image=europe-west9-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-uat-job:latest \
-              --args "modules.scrappers.save_sitemaps_links_to_mongo" \
-              --memory=4Gi  \
-              --task-timeout 24h \
-              --max-retries=5
-
-      - name: Cleanup temporary files
-        run: rm -f utils/configfournisseur-data.json
+          gcloud run jobs create scrappers-uat-job \
+            --region=europe-west9 \
+            --image=europe-west9-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-uat-job:latest \
+            --args "modules.scrappers.save_sitemaps_links_to_mongo" \
+            --memory=4Gi \
+            --task-timeout=24h \
+            --set-env-vars VM1_HOST=${{ vars.VM1_HOST }} \
+            --set-env-vars POSTGRES_PORT=${{ vars.POSTGRES_PORT }} \
+            --set-env-vars POSTGRES_USER=${{ vars.POSTGRES_USER }} \
+            --set-env-vars POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
+            --set-env-vars POSTGRES_DB=${{ vars.POSTGRES_DB }} \
+            --set-env-vars POSTGRES_DWH_DB=${{ vars.POSTGRES_DWH_DB }} \
+            --set-env-vars MONGO_PORT=${{ vars.MONGO_PORT }} \
+            --set-env-vars MONGO_USER=${{ vars.MONGO_USER }} \
+            --set-env-vars MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }} \
+            --set-env-vars MONGO_DB=${{ vars.MONGO_DB }} \
+            --set-env-vars REPLICA_SET=${{ vars.REPLICA_SET }} \
+            --set-env-vars LOGGING_LEVEL=${{ vars.LOGGING_LEVEL }} \
+            --set-env-vars SCRAPER_USER_AGENT=${{ vars.SCRAPER_USER_AGENT }} \
+            --set-env-vars SCRAPER_TIMEOUT=${{ vars.SCRAPER_TIMEOUT }} \
+            --set-env-vars SCRAPER_RETRY_ATTEMPTS=${{ vars.SCRAPER_RETRY_ATTEMPTS }} \
+            --set-env-vars SCRAPER_FREQUENCY=${{ vars.SCRAPER_FREQUENCY }} \
+            --set-env-vars APP_ENV=${{ vars.APP_ENV }} \
+            --set-env-vars TABLE_NAME_IMAGES=${{ vars.TABLE_NAME_IMAGES }} \
+            --set-env-vars GCS_BUCKET_NAME=${{ vars.GCS_BUCKET_NAME }} \
+            --set-env-vars GOOGLE_APPLICATION_CREDENTIALS=${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }} \
+            --max-retries=5
+      - run: rm -f .env utils/config/fournisseur-data.json
 
   deploy-prod:
-    if: startsWith(github.ref, 'refs/tags/')
+    environment: prod
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' || github.event_name == 'release'
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Authenticate with GCP
-        uses: google-github-actions/auth@v1
+      - uses: actions/checkout@v3
+      - uses: google-github-actions/auth@v1
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-      - name: Set up GCloud CLI
-        uses: google-github-actions/setup-gcloud@v1
+      - uses: google-github-actions/setup-gcloud@v1
         with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-      
-      - name: Inject PROD .env
-        run: echo "${{ secrets.ENV_PROD }}" > .env
-
-      - name: Source .env and export variables
-        run: |
-          set -a
-          source .env
-          set +a
-      
-      - name: Set up Google Cloud authentication
-        env:
-          GCP_SERVICE_ACCOUNT_KEY: ${{ secrets.GCP_SA_KEY }}
-        run: |
-          echo "$GCP_SERVICE_ACCOUNT_KEY" > utils/config/fournisseur-data.json
-          export GOOGLE_APPLICATION_CREDENTIALS=utils/config/fournisseur-data.json
-          echo "GOOGLE_APPLICATION_CREDENTIALS is set to utils/config/fournisseur-data.json
-
-      - name: Authenticate Docker with GCP Artifact Registry
-        run: |
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+      - run: |
+          echo "${{ secrets.GCP_SA_KEY }}" > utils/config/fournisseur-data.json
+      - run: |
           gcloud auth configure-docker europe-west9-docker.pkg.dev
-
-      - name: Build and Push Docker images
-        run: |
-          docker build -t europe-west9-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job-prod:latest .
-          docker push europe-west9-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job-prod:latest
-
-      - name: Deploy Cloud Run Job for crawlers
-        run: |
+          docker build -t europe-west9-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job-prod:latest .
+          docker push europe-west9-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job-prod:latest
+      - run: |
           gcloud run jobs delete scrappers-job-prod --region=europe-west9 --quiet || true
-          gcloud run jobs create scrappers-job-prod --region=europe-west9 \
-              --image=europe-west9-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job-prod:latest \
-              --args "modules.scrappers.save_sitemaps_links_to_mongo" \
-              --memory=4Gi  \
-              --task-timeout 24h \
-              --max-retries=5
-
-      - name: Execute Cloud Run Job for scrappers
-        run: |
-          gcloud run jobs execute crawlers-job-prod --region=europe-west9
-
-      - name: Cleanup temporary files
-        run: rm -f utils/config/fournisseur-data.json
+          gcloud run jobs create scrappers-job-prod \
+            --region=europe-west9 \
+            --image=europe-west9-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job-prod:latest \
+            --args "modules.scrappers.save_sitemaps_links_to_mongo" \
+            --memory=4Gi \
+            --task-timeout=24h \
+            --set-env-vars VM1_HOST=${{ vars.VM1_HOST }} \
+            --set-env-vars POSTGRES_PORT=${{ vars.POSTGRES_PORT }} \
+            --set-env-vars POSTGRES_USER=${{ vars.POSTGRES_USER }} \
+            --set-env-vars POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
+            --set-env-vars POSTGRES_DB=${{ vars.POSTGRES_DB }} \
+            --set-env-vars POSTGRES_DWH_DB=${{ vars.POSTGRES_DWH_DB }} \
+            --set-env-vars MONGO_PORT=${{ vars.MONGO_PORT }} \
+            --set-env-vars MONGO_USER=${{ vars.MONGO_USER }} \
+            --set-env-vars MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }} \
+            --set-env-vars MONGO_DB=${{ vars.MONGO_DB }} \
+            --set-env-vars REPLICA_SET=${{ vars.REPLICA_SET }} \
+            --set-env-vars LOGGING_LEVEL=${{ vars.LOGGING_LEVEL }} \
+            --set-env-vars SCRAPER_USER_AGENT=${{ vars.SCRAPER_USER_AGENT }} \
+            --set-env-vars SCRAPER_TIMEOUT=${{ vars.SCRAPER_TIMEOUT }} \
+            --set-env-vars SCRAPER_RETRY_ATTEMPTS=${{ vars.SCRAPER_RETRY_ATTEMPTS }} \
+            --set-env-vars SCRAPER_FREQUENCY=${{ vars.SCRAPER_FREQUENCY }} \
+            --set-env-vars APP_ENV=${{ vars.APP_ENV }} \
+            --set-env-vars TABLE_NAME_IMAGES=${{ vars.TABLE_NAME_IMAGES }} \
+            --set-env-vars GCS_BUCKET_NAME=${{ vars.GCS_BUCKET_NAME }} \
+            --set-env-vars GOOGLE_APPLICATION_CREDENTIALS=${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }} \
+            --max-retries=5
+          gcloud run jobs execute scrappers-job-prod --region=europe-west9
+      - run: rm -f .env utils/config/fournisseur-data.json
