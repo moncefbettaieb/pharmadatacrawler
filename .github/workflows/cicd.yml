@@ -133,13 +133,13 @@ jobs:
           echo "${{ secrets.GCP_SA_KEY }}" > utils/config/fournisseur-data.json
       - run: |
           gcloud auth configure-docker europe-west9-docker.pkg.dev
-          docker build -t europe-west9-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job-prod:latest .
-          docker push europe-west9-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job-prod:latest
+          docker build -t europe-west9-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-prod-job:latest .
+          docker push europe-west9-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-prod-job:latest
       - run: |
-          gcloud run jobs delete scrappers-job-prod --region=europe-west9 --quiet || true
-          gcloud run jobs create scrappers-job-prod \
+          gcloud run jobs delete scrappers-prod-job --region=europe-west9 --quiet || true
+          gcloud run jobs create scrappers-prod-job \
             --region=europe-west9 \
-            --image=europe-west9-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-job-prod:latest \
+            --image=europe-west9-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/cloud-run-source-deploy/scrappers-prod-job:latest \
             --args "modules.scrappers.save_sitemaps_links_to_mongo" \
             --memory=4Gi \
             --task-timeout=24h \
