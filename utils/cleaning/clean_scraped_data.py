@@ -62,6 +62,21 @@ def clean_scraped_data(product_data: dict) -> dict:
                 pass
         return s
 
+    def _remove_wrapping_quotes(s: str) -> str:
+        """
+        Si la chaîne commence et se termine par un guillemet ("),
+        on retire le premier et le dernier caractère.
+
+        Exemple :
+          "Bébé et Maman" -> Bébé et Maman
+          "Hello" -> Hello
+          TOTO -> TOTO (inchangé, car pas de guillemets)
+        """
+        s = s.strip()
+        if len(s) > 1 and s.startswith('"') and s.endswith('"'):
+            return s[1:-1].strip()
+        return s
+    
     def _clean_text_field(val: str) -> Union[str, None, dict]:
         """
         Nettoie une valeur textuelle :
@@ -76,9 +91,11 @@ def clean_scraped_data(product_data: dict) -> dict:
         maybe_null = _nullify_string(val)
         if maybe_null is None:
             return None
-        # 2) Tenter un parse JSON
-        maybe_parsed = _parse_json(maybe_null)
-        # 3) Nettoyage additionnel : enlever les retours à la ligne multiples
+        # 2) Enlever d'éventuels guillemets externes
+        no_quotes = _remove_wrapping_quotes(maybe_null)
+        # 3) Tenter un parse JSON
+        maybe_parsed = _parse_json(no_quotes)
+        # 4) Nettoyage additionnel : enlever les retours à la ligne multiples
         if isinstance(maybe_parsed, str):
             # Suppression des \r \n multiples (ou on peut les remplacer par un espace)
             cleaned = re.sub(r'[\r\n\t]+', ' ', maybe_parsed)
@@ -88,7 +105,7 @@ def clean_scraped_data(product_data: dict) -> dict:
         else:
             # Le champ était du JSON parseable et on a un dict/list
             return maybe_parsed
-
+    
     # Exemple : on applique _clean_text_field à certains champs spécifiques
     text_fields = [
         "title", "cip_code", "brand", "short_desc", "long_desc",

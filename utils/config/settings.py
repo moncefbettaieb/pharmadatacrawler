@@ -3,10 +3,10 @@ from dotenv import load_dotenv
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+from webdriver_manager.chrome import ChromeDriverManager
 
 # Charger les variables d'environnement depuis un fichier spécifique selon l'environnement
 APP_ENV = os.getenv("APP_ENV", "dev")  # Par défaut, l'environnement est "dev"
-env_file = f".env.{APP_ENV}" if APP_ENV in ["uat", "prod"] else ".env"
 load_dotenv()
 
 
@@ -15,7 +15,7 @@ DATABASE_URL = os.getenv("DATABASE_URL", 'localhost')
 
 # Configuration PostgreSQL
 POSTGRES_CONFIG = {
-    "host": os.getenv("POSTGRES_HOST", "localhost"),
+    "host": os.getenv("VM1_HOST", "localhost"),
     "port": int(os.getenv("POSTGRES_PORT", 5432)),
     "user": os.getenv("POSTGRES_USER", "your_user"),
     "password": os.getenv("POSTGRES_PASSWORD", "your_password"),
@@ -25,7 +25,7 @@ POSTGRES_CONFIG = {
 
 # Configuration MongoDB
 MONGO_CONFIG = {
-    "host": os.getenv("MONGO_HOST", "localhost"),
+    "host": os.getenv("VM1_HOST", "localhost"),
     "port": int(os.getenv("MONGO_PORT", 27017)),
     "username": os.getenv("MONGO_USER", ""),
     "password": os.getenv("MONGO_PASSWORD", ""),
@@ -70,7 +70,7 @@ SCHEDULER_CONFIG = {
 LOGGING_LEVEL = os.getenv("LOGGING_LEVEL", "DEBUG")
 
 SAVE_GCS_IMAGES_CONFIG = {
-    "table_name": os.getenv("TABLE_NAME", "dim_images"),
+    "table_name": os.getenv("TABLE_NAME_IMAGES", "dim_images"),
     "gcs_bucket_name": os.getenv("GCS_BUCKET_NAME", "pharma_images"),
     "nb_download_images": os.getenv("NB_DOWNLOAD_IMAGES", None),
      }
@@ -92,13 +92,12 @@ def load_config():
 
 def configure_selenium():
     chrome_options = Options()
-    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--headless")  # Exécuter en mode sans tête
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--log-level=3")
-    chrome_options.binary_location = "/usr/bin/chromium"
+    chrome_options.add_argument("--log-level=5")
     
-    service = Service("/usr/bin/chromedriver")
+    service = Service(ChromeDriverManager(driver_version="134.0.6998.118").install())
     driver = webdriver.Chrome(service=service, options=chrome_options)
     return driver
