@@ -70,7 +70,7 @@ jobs:
 
   deploy-uat:
     environment: staging
-    if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'develop'
+    if: github.event_name == ('pull_request' && github.event.pull_request.base.ref == 'develop') || github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -164,5 +164,4 @@ jobs:
             --set-env-vars GCS_BUCKET_NAME=${{ vars.GCS_BUCKET_NAME }} \
             --set-env-vars GOOGLE_APPLICATION_CREDENTIALS=${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }} \
             --max-retries=5
-          gcloud run jobs execute scrappers-job-prod --region=europe-west9
       - run: rm -f .env utils/config/fournisseur-data.json
